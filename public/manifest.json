@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "SPS Test",
+  "name": "SPS Test - React Client",
   "icons": [
     {
       "src": "favicon.ico",
