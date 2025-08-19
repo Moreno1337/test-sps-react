@@ -1,32 +1,23 @@
 import * as React from "react";
-import { useLoaderData, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import {
   Paper, Stack, Typography, TextField, MenuItem,
   Button, Alert, Collapse
 } from "@mui/material";
 import UserService from "../services/UserService";
 
-export async function userLoader({ params }) {
-  const { userId } = params;
-  const list = await UserService.list(); // GET /users
-  const user = Array.isArray(list) ? list.find(u => u.id === userId) : null;
-  return { user };
-}
-
 const schema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   email: z.email("E-mail inválido"),
   type: z.enum(["admin", "user"], { errorMap: () => ({ message: "Selecione um tipo" }) }),
-  password: z.union([z.string().min(6, "Senha deve ter ao menos 6 caracteres"), z.literal("")])
-            .optional().transform(v => (v ? v : undefined)),
+  password: z.string().min(5, "Senha deve ter ao menos 6 caracteres"),
 });
 
-export default function UserEdit() {
+export default function UserCreate() {
   const navigate = useNavigate();
-  const { user } = useLoaderData() ?? {};
 
   const {
     register,
@@ -34,45 +25,24 @@ export default function UserEdit() {
     formState: { errors, isSubmitting },
     setError,
     clearErrors,
-    reset,
-    control,
   } = useForm({
     resolver: zodResolver(schema),
     mode: "onTouched",
     defaultValues: { name: "", email: "", type: "user", password: "" },
   });
 
-  React.useEffect(() => {
-    if (user) {
-      reset({
-        name: user.name ?? "",
-        email: user.email ?? "",
-        type: String(user.type || "user").toLowerCase(),
-        password: "",
-      });
-    }
-  }, [user, reset]);
-
   const onSubmit = async (values) => {
     try {
-      const payload = {
-        name: values.name,
-        email: values.email,
-        type: values.type,
-        ...(values.password && { password: values.password }),
-      };
-      await UserService.update(user.id, payload); // PUT /users/:id
+      await UserService.create(values); // POST /users
       navigate("/users", { replace: true });
     } catch (e) {
-      setError("root", { type: "server", message: e.message || "Falha ao atualizar usuário" });
+      setError("root", { type: "server", message: e.message || "Falha ao criar usuário" });
     }
   };
 
-  if (!user) return <Alert severity="warning">Usuário não encontrado.</Alert>;
-
   return (
     <Paper sx={{ p: 2 }}>
-      <Typography variant="h5" sx={{ mb: 2 }}>Editar usuário</Typography>
+      <Typography variant="h5" sx={{ mb: 2 }}>Novo usuário</Typography>
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <Stack spacing={2} maxWidth={560}>
@@ -83,7 +53,6 @@ export default function UserEdit() {
             error={!!errors.name}
             helperText={errors.name?.message}
           />
-
           <TextField
             label="E-mail"
             type="email"
@@ -93,33 +62,25 @@ export default function UserEdit() {
             error={!!errors.email}
             helperText={errors.email?.message}
           />
-
-          <Controller
-            name="type"
-            control={control}
-            render={({ field, fieldState }) => (
-              <TextField
-                select
-                label="Tipo"
-                fullWidth
-                {...field}
-                error={!!fieldState.error}
-                helperText={fieldState.error?.message}
-              >
-                <MenuItem value="user">Usuário</MenuItem>
-                <MenuItem value="admin">Admin</MenuItem>
-              </TextField>
-            )}
-          />
-
           <TextField
-            label="Nova senha (opcional)"
+            select
+            label="Tipo"
+            fullWidth
+            {...register("type")}
+            error={!!errors.type}
+            helperText={errors.type?.message}
+          >
+            <MenuItem value="user">Usuário</MenuItem>
+            <MenuItem value="admin">Admin</MenuItem>
+          </TextField>
+          <TextField
+            label="Senha"
             type="password"
             autoComplete="new-password"
             fullWidth
             {...register("password")}
             error={!!errors.password}
-            helperText={errors.password?.message || "Deixe em branco para manter a senha atual"}
+            helperText={errors.password?.message}
           />
 
           <Stack direction="row" spacing={1} justifyContent="flex-end">
