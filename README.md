@@ -1,4 +1,4 @@
-# SPS Users — Front-end React (SPA)
+# SPS Users - Front-end React (SPA)
 
 Cliente React para o desafio: login com JWT e CRUD de usuários consumindo a API Node/Express. Foco em UX simples, rotas protegidas e padrões de código.
 
